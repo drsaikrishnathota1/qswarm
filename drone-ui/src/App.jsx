@@ -575,16 +575,18 @@ function LiveFeedScreen({ drone, onBack, lastOptimizedDroneName }) {
       >
         <div className="feedBgDrift" />
 
-        <video
-          ref={videoRef}
-          className={`feedVideo ${isStandby ? "feedVideoDim" : ""}`}
-          src={scene.video}
-          autoPlay
-          loop
-          playsInline
-          muted={!audioOn}
-          preload="auto"
-        />
+        <div className="feedVideoWrap">
+          <video
+            ref={videoRef}
+            className={`feedVideo ${isStandby ? "feedVideoDim" : ""}`}
+            src={scene.video}
+            autoPlay
+            loop
+            playsInline
+            muted={!audioOn}
+            preload="auto"
+          />
+        </div>
 
         <div className="crosshairH" />
         <div className="crosshairV" />

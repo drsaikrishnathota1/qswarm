@@ -194,14 +194,27 @@ body {
   background-position: center;
 }
 
-.feedVideo {
+/* Clip overflow so the video can zoom/pan without exposing letterboxing. */
+.feedVideoWrap {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  /* keep below HUD + crosshair, above drift */
   z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.feedVideo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 118%;
+  height: 118%;
+  transform: translate(-50%, -50%);
+  object-fit: cover;
+  transform-origin: 48% 44%;
+  animation: videoKen 26s ease-in-out infinite alternate;
+  will-change: transform;
+  backface-visibility: hidden;
   filter: saturate(1.02) contrast(1.04);
 }
 
@@ -217,11 +230,11 @@ body {
   background: inherit;
   background-size: cover;
   background-position: center;
-  transform: scale(1.05);
+  transform: scale(1.08);
   filter: saturate(1.05) contrast(1.08);
-  /* gentle pan + subtle “breathing” zoom */
+  /* gentle pan + subtle “breathing” zoom (matches video motion a bit) */
   animation:
-    feedPan 18s ease-in-out infinite alternate,
+    feedPan 22s ease-in-out infinite alternate,
     feedBreath 11s ease-in-out infinite;
   z-index: 0;
 }
@@ -267,9 +280,25 @@ body {
 }
 
 @keyframes feedPan {
-  0%   { transform: scale(1.05) translate3d(-0.6%, -0.35%, 0); }
-  50%  { transform: scale(1.06) translate3d( 0.35%, -0.55%, 0); }
-  100% { transform: scale(1.05) translate3d( 0.6%,  0.35%, 0); }
+  0%   { transform: scale(1.07) translate3d(-0.85%, -0.55%, 0); }
+  40%  { transform: scale(1.10) translate3d( 0.45%, -0.65%, 0); }
+  70%  { transform: scale(1.12) translate3d( 0.75%,  0.35%, 0); }
+  100% { transform: scale(1.08) translate3d(-0.35%,  0.55%, 0); }
+}
+
+@keyframes videoKen {
+  0% {
+    transform: translate(-50%, -50%) scale(1.05) translate3d(-1.4%, -1%, 0);
+  }
+  35% {
+    transform: translate(-50%, -50%) scale(1.10) translate3d(0.6%, 0.45%, 0);
+  }
+  70% {
+    transform: translate(-50%, -50%) scale(1.14) translate3d(1.1%, -0.65%, 0);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.06) translate3d(-0.35%, 0.85%, 0);
+  }
 }
 
 @keyframes feedBreath {
