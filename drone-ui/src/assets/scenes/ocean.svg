@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#062046"/>
+      <stop offset="0.55" stop-color="#050a12"/>
+      <stop offset="1" stop-color="#04070c"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b2d53" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#061c35" stop-opacity="0.95"/>
+    </linearGradient>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch" />
+      <feColorMatrix type="matrix" values="
+        0 0 0 0 0
+        0 0 0 0 0
+        0 0 0 0 0
+        0 0 0 .12 0"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#sky)"/>
+
+  <!-- Horizon -->
+  <rect y="440" width="1600" height="460" fill="url(#water)"/>
+  <path d="M0,455 C250,430 420,470 650,452 C880,434 1030,476 1260,454 C1420,438 1520,460 1600,455"
+        stroke="#3e94ff" stroke-opacity="0.22" stroke-width="2" fill="none"/>
+
+  <!-- Waves -->
+  <g stroke="#3e94ff" stroke-opacity="0.08" stroke-width="2" fill="none">
+    <path d="M0,560 C200,535 360,585 560,560 C760,535 920,590 1120,560 C1320,530 1460,585 1600,560"/>
+    <path d="M0,640 C220,610 380,680 600,640 C820,600 980,690 1200,640 C1400,608 1500,670 1600,650"/>
+    <path d="M0,720 C220,700 420,755 620,720 C820,685 1040,770 1240,725 C1400,695 1500,735 1600,720"/>
+  </g>
+
+  <rect width="1600" height="900" filter="url(#grain)"/>
+  <rect width="1600" height="900" fill="#000" opacity="0.26"/>
+</svg>
+

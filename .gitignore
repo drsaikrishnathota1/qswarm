@@ -1,0 +1,15 @@
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Java / Maven
+**/target/
+*.class
+
+# Node / Vite
+**/node_modules/
+**/dist/
+
