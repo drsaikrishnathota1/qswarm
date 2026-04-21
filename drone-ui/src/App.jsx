@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import sceneHawk01 from "./assets/scenes/hawk01_desert.png";
-import sceneHawk02 from "./assets/scenes/hawk02_coast.png";
-import sceneHawk03 from "./assets/scenes/hawk03_skyline.png";
-import sceneHawk04 from "./assets/scenes/hawk04_strike.png";
-import sceneHawk05 from "./assets/scenes/hawk05_inferno.png";
+import sceneDesert from "./assets/scenes/desert.svg";
+import sceneOcean from "./assets/scenes/ocean.svg";
+import sceneSkyline from "./assets/scenes/skyline.svg";
+import sceneMountains from "./assets/scenes/mountains.svg";
+import sceneForest from "./assets/scenes/forest.svg";
 import videoHawk01 from "./assets/videos/hawk-01.mp4";
 import videoHawk02 from "./assets/videos/hawk-02.mp4";
 import videoHawk03 from "./assets/videos/hawk-03.mp4";
@@ -346,11 +346,11 @@ function LiveFeedScreen({ drone, onBack, lastOptimizedDroneName }) {
   const scene = useMemo(() => {
     const name = drone?.name || "";
     const presets = {
-      "HAWK-01": { label: "Swarm Surveillance — City Grid", img: sceneHawk01, video: videoHawk01 },
-      "HAWK-02": { label: "Roadwatch — Target Track", img: sceneHawk02, video: videoHawk02 },
-      "HAWK-03": { label: "Quantum Tasking — Mission Area", img: sceneHawk03, video: videoHawk03 },
-      "HAWK-04": { label: "Base Perimeter — Standby", img: sceneHawk04, video: videoHawk04 },
-      "HAWK-05": { label: "Patrol Sweep — Long Pan", img: sceneHawk05, video: videoHawk05 }
+      "HAWK-01": { label: "Swarm Surveillance — City Grid", img: sceneDesert, video: videoHawk01 },
+      "HAWK-02": { label: "Roadwatch — Target Track", img: sceneOcean, video: videoHawk02 },
+      "HAWK-03": { label: "Quantum Tasking — Mission Area", img: sceneSkyline, video: videoHawk03 },
+      "HAWK-04": { label: "Base Perimeter — Standby", img: sceneMountains, video: videoHawk04 },
+      "HAWK-05": { label: "Patrol Sweep — Long Pan", img: sceneForest, video: videoHawk05 }
     };
     return presets[name] || presets["HAWK-03"];
   }, [drone?.name]);
