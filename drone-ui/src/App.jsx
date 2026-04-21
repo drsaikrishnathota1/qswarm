@@ -4,6 +4,11 @@ import sceneHawk02 from "./assets/scenes/hawk02_coast.png";
 import sceneHawk03 from "./assets/scenes/hawk03_skyline.png";
 import sceneHawk04 from "./assets/scenes/hawk04_strike.png";
 import sceneHawk05 from "./assets/scenes/hawk05_inferno.png";
+import videoHawk01 from "./assets/videos/hawk-01.mp4";
+import videoHawk02 from "./assets/videos/hawk-02.mp4";
+import videoHawk03 from "./assets/videos/hawk-03.mp4";
+import videoHawk04 from "./assets/videos/hawk-04.mp4";
+import videoHawk05 from "./assets/videos/hawk-05.mp4";
 
 const API_BASE = "http://localhost:8080";
 
@@ -197,7 +202,7 @@ function DroneCard({ drone, selected, onSelect, onViewFeed }) {
   );
 }
 
-function DroneSelectionScreen({ token, onViewFeed }) {
+function DroneSelectionScreen({ token, onViewFeed, onOptimized }) {
   const [drones, setDrones] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -237,6 +242,7 @@ function DroneSelectionScreen({ token, onViewFeed }) {
         body: { targetLat: 32.87, targetLon: -96.65 },
       });
       setModal(data);
+      if (data?.selectedDroneName) onOptimized?.(data.selectedDroneName);
     } catch (e) {
       setError(e?.message || String(e));
     } finally {
@@ -332,7 +338,7 @@ function DroneSelectionScreen({ token, onViewFeed }) {
   );
 }
 
-function LiveFeedScreen({ drone, onBack }) {
+function LiveFeedScreen({ drone, onBack, lastOptimizedDroneName }) {
   const baseLat = Number(drone?.latitude ?? 0);
   const baseLon = Number(drone?.longitude ?? 0);
   const baseAlt = Number(drone?.altitude ?? 0);
@@ -340,11 +346,11 @@ function LiveFeedScreen({ drone, onBack }) {
   const scene = useMemo(() => {
     const name = drone?.name || "";
     const presets = {
-      "HAWK-01": { label: "Desert AO", img: sceneHawk01 },
-      "HAWK-02": { label: "Coastal AO", img: sceneHawk02 },
-      "HAWK-03": { label: "Skyline AO", img: sceneHawk03 },
-      "HAWK-04": { label: "Strike Zone", img: sceneHawk04 },
-      "HAWK-05": { label: "Night Inferno", img: sceneHawk05 }
+      "HAWK-01": { label: "Swarm Surveillance — City Grid", img: sceneHawk01, video: videoHawk01 },
+      "HAWK-02": { label: "Roadwatch — Target Track", img: sceneHawk02, video: videoHawk02 },
+      "HAWK-03": { label: "Quantum Tasking — Mission Area", img: sceneHawk03, video: videoHawk03 },
+      "HAWK-04": { label: "Base Perimeter — Standby", img: sceneHawk04, video: videoHawk04 },
+      "HAWK-05": { label: "Patrol Sweep — Long Pan", img: sceneHawk05, video: videoHawk05 }
     };
     return presets[name] || presets["HAWK-03"];
   }, [drone?.name]);
@@ -358,6 +364,7 @@ function LiveFeedScreen({ drone, onBack }) {
   // Audio: browsers require a user gesture; we provide a toggle button.
   const [audioOn, setAudioOn] = useState(false);
   const audioRef = React.useRef(null); // { stop }
+  const videoRef = React.useRef(null);
 
   useEffect(() => {
     return () => {
@@ -370,6 +377,7 @@ function LiveFeedScreen({ drone, onBack }) {
       setAudioOn(false);
       if (audioRef.current?.stop) audioRef.current.stop();
       audioRef.current = null;
+      if (videoRef.current) videoRef.current.muted = true;
       return;
     }
 
@@ -515,6 +523,13 @@ function LiveFeedScreen({ drone, onBack }) {
 
     audioRef.current = { stop };
     setAudioOn(true);
+    if (videoRef.current) {
+      // Unmute after user gesture.
+      videoRef.current.muted = false;
+      videoRef.current.volume = 0.55;
+      // eslint-disable-next-line no-empty
+      try { await videoRef.current.play(); } catch {}
+    }
   }
 
   const lat = baseLat + Math.sin(tick / 6) * 0.0007;
@@ -527,6 +542,9 @@ function LiveFeedScreen({ drone, onBack }) {
     const t = new Date();
     return t.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   }, [tick]);
+
+  const isMissionDrone = !!(drone?.name && lastOptimizedDroneName && drone.name === lastOptimizedDroneName);
+  const isStandby = String(drone?.status || "").toLowerCase() === "standby";
 
   return (
     <div className="container">
@@ -557,8 +575,21 @@ function LiveFeedScreen({ drone, onBack }) {
       >
         <div className="feedBgDrift" />
 
+        <video
+          ref={videoRef}
+          className={`feedVideo ${isStandby ? "feedVideoDim" : ""}`}
+          src={scene.video}
+          autoPlay
+          loop
+          playsInline
+          muted={!audioOn}
+          preload="auto"
+        />
+
         <div className="crosshairH" />
         <div className="crosshairV" />
+
+        {drone?.name === "HAWK-02" ? <div className="trackBox" /> : null}
 
         <div className="feedHudTop">
           <div className="feedHudLeft">
@@ -581,6 +612,8 @@ function LiveFeedScreen({ drone, onBack }) {
             </span>
           </div>
         </div>
+
+        {isMissionDrone ? <div className="missionFrame">MISSION AREA</div> : null}
 
         <div className="feedCorner tl" />
         <div className="feedCorner tr" />
@@ -614,6 +647,7 @@ export function App() {
   const [screen, setScreen] = useState("login"); // login | drones | feed
   const [token, setToken] = useState("");
   const [feedDrone, setFeedDrone] = useState(null);
+  const [lastOptimizedDroneName, setLastOptimizedDroneName] = useState("");
 
   if (screen === "login") {
     return (
@@ -627,12 +661,19 @@ export function App() {
   }
 
   if (screen === "feed") {
-    return <LiveFeedScreen drone={feedDrone} onBack={() => setScreen("drones")} />;
+    return (
+      <LiveFeedScreen
+        drone={feedDrone}
+        lastOptimizedDroneName={lastOptimizedDroneName}
+        onBack={() => setScreen("drones")}
+      />
+    );
   }
 
   return (
     <DroneSelectionScreen
       token={token}
+      onOptimized={(name) => setLastOptimizedDroneName(name)}
       onViewFeed={(drone) => {
         setFeedDrone(drone);
         setScreen("feed");
