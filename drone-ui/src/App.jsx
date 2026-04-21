@@ -1,9 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import sceneDesert from "./assets/scenes/desert.svg";
-import sceneOcean from "./assets/scenes/ocean.svg";
-import sceneSkyline from "./assets/scenes/skyline.svg";
-import sceneMountains from "./assets/scenes/mountains.svg";
-import sceneForest from "./assets/scenes/forest.svg";
 import videoHawk01 from "./assets/videos/hawk-01.mp4";
 import videoHawk02 from "./assets/videos/hawk-02.mp4";
 import videoHawk03 from "./assets/videos/hawk-03.mp4";
@@ -346,11 +341,36 @@ function LiveFeedScreen({ drone, onBack, lastOptimizedDroneName }) {
   const scene = useMemo(() => {
     const name = drone?.name || "";
     const presets = {
-      "HAWK-01": { label: "Swarm Surveillance — City Grid", img: sceneDesert, video: videoHawk01 },
-      "HAWK-02": { label: "Roadwatch — Target Track", img: sceneOcean, video: videoHawk02 },
-      "HAWK-03": { label: "Quantum Tasking — Mission Area", img: sceneSkyline, video: videoHawk03 },
-      "HAWK-04": { label: "Base Perimeter — Standby", img: sceneMountains, video: videoHawk04 },
-      "HAWK-05": { label: "Patrol Sweep — Long Pan", img: sceneForest, video: videoHawk05 }
+      "HAWK-01": {
+        label: "Swarm Surveillance — Desert grid",
+        feedBackdrop:
+          "linear-gradient(165deg, #0f1419 0%, #1a2433 35%, #2a1f14 70%, #0a0806 100%)",
+        video: videoHawk01
+      },
+      "HAWK-02": {
+        label: "Roadwatch — Coastal Track",
+        feedBackdrop:
+          "linear-gradient(180deg, #061a24 0%, #0c3044 45%, #082030 70%, #040c12 100%)",
+        video: videoHawk02
+      },
+      "HAWK-03": {
+        label: "Quantum Tasking — Skyline mission",
+        feedBackdrop:
+          "linear-gradient(155deg, #120a1c 0%, #251838 40%, #1a1030 100%)",
+        video: videoHawk03
+      },
+      "HAWK-04": {
+        label: "Base Perimeter — Strike Ready",
+        feedBackdrop:
+          "linear-gradient(170deg, #141010 0%, #2a1818 50%, #1a0a0a 100%)",
+        video: videoHawk04
+      },
+      "HAWK-05": {
+        label: "Patrol Sweep — Long Pan",
+        feedBackdrop:
+          "linear-gradient(160deg, #081208 0%, #122418 55%, #0a140c 100%)",
+        video: videoHawk05
+      }
     };
     return presets[name] || presets["HAWK-03"];
   }, [drone?.name]);
@@ -568,7 +588,7 @@ function LiveFeedScreen({ drone, onBack, lastOptimizedDroneName }) {
       <div
         className="feedBox"
         style={{
-          backgroundImage: `url(${scene.img})`,
+          backgroundImage: scene.feedBackdrop,
           backgroundSize: "cover",
           backgroundPosition: "center"
         }}

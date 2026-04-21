@@ -8,6 +8,38 @@ This repo is a full, local-first demo that ties together:
 
 Everything runs locally (no cloud services required).
 
+## Screenshots — UI walkthrough
+
+The **AEROS Command — Drone Surveillance Portal** (`drone-ui`) is a dark, command-style React app. Below is what you see when you run the stack locally (for example `http://127.0.0.1:5173` after `npm run dev`).
+
+### Sign-in
+
+Demo operator login; the UI calls `POST /api/auth/login` on the Spring Boot backend (`operator1` / `password123`).
+
+![Military sign-in — operator ID and passphrase](docs/screenshots/01-login.png)
+
+### Drone fleet & quantum assignment
+
+Five **HAWK** units with status, battery, GPS, altitude, and **View Live Feed**. Select a drone (blue outline), then **Assign to Mission** to run `POST /api/drones/optimize`, which executes `quantum_optimizer.py` and returns the selected asset.
+
+![Drone selection grid with telemetry and mission button](docs/screenshots/02-drone-selection.png)
+
+### Live feeds (HAWK-01 … HAWK-05)
+
+Each drone opens a **simulated** feed: MP4 video, corner brackets, crosshair, HUD (camera label, REC, timestamp, signal bars), and telemetry tiles (lat/lon/alt/speed). Optional **Audio ON** uses Web Audio for ambience (browser gesture required).
+
+| HAWK-01 — Swarm / desert grid | HAWK-02 — Roadwatch / coastal (tracking box) |
+|:---:|:---:|
+| ![Live feed HAWK-01](docs/screenshots/03-live-feed-hawk-01.png) | ![Live feed HAWK-02](docs/screenshots/04-live-feed-hawk-02.png) |
+
+| HAWK-03 — Quantum / skyline | HAWK-04 — Base perimeter / strike |
+|:---:|:---:|
+| ![Live feed HAWK-03](docs/screenshots/05-live-feed-hawk-03.png) | ![Live feed HAWK-04](docs/screenshots/06-live-feed-hawk-04.png) |
+
+| HAWK-05 — Patrol sweep |
+|:---:|
+| ![Live feed HAWK-05](docs/screenshots/07-live-feed-hawk-05.png) |
+
 ## What’s implemented
 
 ### Backend (`drone-backend/`) — Spring Boot 3 (Java 17)
