@@ -1,14 +1,16 @@
-# qswarm — Quantum-Assisted Drone Mission Assignment (Full-Stack Demo)
+# qswarm — Quantum + AI Drone Swarm Optimization (Full-Stack Demo)
 
-**AEROS Command — Drone Surveillance Portal** · Local-first research demo combining a **Java REST API**, a **React** command UI, and a **Python / Qiskit** quantum-inspired optimizer.
+**AEROS Command — Drone Surveillance Portal** · Local-first demo combining **Quantum (QAOA-style optimization)** + **AI (live-feed object detection)** for a notional **drone swarm** workflow, wired through a **Java REST API**, a **React** command UI, and a **Python / Qiskit** optimizer.
 
 ---
 
 ## Abstract
 
-**qswarm** is an end-to-end demonstration of how a **swarm-style surveillance control room** can be wired to a **discrete mission-assignment** backend. Five notional assets (**HAWK-01 … HAWK-05**) expose telemetry (GPS, altitude, battery, operational status). An operator authenticates against a **Spring Boot** service, reviews the fleet, requests **mission optimization** for a target coordinate, and inspects per-drone **simulated live feeds** with a tactical HUD.
+**qswarm** is an end-to-end demonstration of a **Quantum + AI** workflow for **drone swarm mission support**. Five notional assets (**HAWK-01 … HAWK-05**) expose telemetry (GPS, altitude, battery, operational status) inside a simulated command portal. An operator authenticates against a **Spring Boot** service, reviews the fleet, requests **mission optimization** for a target coordinate, and inspects per-drone **simulated live feeds** with a tactical HUD.
 
-The optimization core encodes “pick **one** drone” as a **one-hot combinatorial** problem and solves it with a **QAOA-style** workflow on **Qiskit Aer** (simulator), while the same codebase can report a **classical** optimum for comparison. The goal is **architectural**: show how quantum-native formulations plug into a conventional enterprise stack—not to claim a speedup for five drones, where classical search is trivial.
+The **quantum optimization** core encodes “pick **one** drone” as a **one-hot combinatorial** problem and solves it with a **QAOA-style** workflow using **Qiskit Aer** (local simulator), while also reporting a **classical** optimum for comparison. The **AI component** adds **object detection** on the live video feed using **TensorFlow.js + COCO‑SSD**, drawing labeled bounding boxes over the camera view to improve situational awareness.
+
+The goal is **architectural**: demonstrate how **quantum-native discrete optimization** and **AI perception** can be integrated into a conventional full-stack application—not to claim a speedup for five drones, where classical search is trivial and quantum simulation overhead dominates.
 
 ---
 
@@ -65,6 +67,8 @@ Nothing here requires cloud quantum hardware, paid APIs, or a database; the flee
 | **React** | 18.x | UI state, screens, effects. |
 | **Vite** | 5.x | Dev server (**`:5173`**), HMR, production bundling. |
 | **`@vitejs/plugin-react`** | 4.x | JSX / Fast Refresh. |
+| **TensorFlow.js** | 4.x | On-device inference for live-feed **object detection**. |
+| **`@tensorflow-models/coco-ssd`** | 2.x | COCO-SSD detector (lite MobileNet backbone). |
 
 ### DevOps & assets
 
@@ -89,6 +93,44 @@ Nothing here requires cloud quantum hardware, paid APIs, or a database; the flee
 3. **Path to hardware** — The circuit structure used with **Aer** is the same *shape* you would later target on **superconducting** or other QPUs—after noise budgets, compilation, and calibration are addressed.
 
 4. **Baseline comparison** — The script still exposes **classical** best-assignment on the same discrete model so we never confuse **“quantum demo”** with **“only possible solution.”**
+
+---
+
+## Why we use **Quantum + AI** together (in this app)
+
+This project uses **two complementary ideas**:
+
+- **Quantum (QAOA-style)**: helps express and explore the **discrete assignment** decision (choose the best drone given constraints/objective).
+- **AI (object detection on live feed)**: helps extract **semantic signals** from video (what objects appear in the camera area), which can be used to:
+  - enrich the operator’s situational awareness (HUD overlays),
+  - produce features that later influence assignment (risk, priority, target presence),
+  - support human-in-the-loop decision making.
+
+In the current implementation, the **AI** runs in the browser via **TensorFlow.js + COCO‑SSD** and renders **bounding boxes + labels** on the live video. The **quantum optimizer** still decides the mission assignment using the numeric objective. This is an intentionally clean separation so the demo stays honest and debuggable.
+
+---
+
+## Qiskit simulator (Qiskit Aer) — what it is and what it does here
+
+This repo uses **Qiskit Aer** as a **local quantum simulator** (no account required).
+
+### What “simulator” means
+
+- It runs quantum circuits on your **CPU** by simulating quantum state evolution.
+- It can return:
+  - **statevectors** (full amplitudes; exact but limited by qubit count),
+  - or **measurement shots** (bitstring samples, closer to how real hardware is read).
+
+### How we use Aer in this project
+
+- We build a parameterized **QAOA-style** circuit and tune angles classically.
+- We execute the circuit with **`AerSimulator`** and a chosen number of **shots**.
+- The optimizer decodes the most likely **valid one-hot** bitstring into a selected drone.
+
+### Why Aer is important for demos
+
+- It makes the quantum portion **fully local** and repeatable for a conference / classroom.
+- It also keeps the narrative **honest**: for 5 drones, the “quantum runtime” is dominated by **simulation + parameter search**, not by a magical speedup.
 
 ---
 
@@ -128,23 +170,42 @@ Nothing here requires cloud quantum hardware, paid APIs, or a database; the flee
 
 - **Screen 1 — Sign-in** — Calls login API; stores token in React state.
 - **Screen 2 — Drone selection** — Loads fleet; card selection (blue outline); **Refresh**; **Assign to Mission** → optimize API → **modal** with selected drone + raw optimizer output.
-- **Screen 3 — Live feed** — Per-drone **MP4** (`src/assets/videos/hawk-0x.mp4`); gradient backdrop per drone; **HUD** (CAM label, REC, time, signal bars); **crosshair** + corner brackets; **Ken Burns**-style motion on video; **HAWK-02** gets a **tracking box**; post-optimize **MISSION AREA** frame when viewing the selected drone; **Web Audio** ambience after **Audio ON** (user gesture); **STANDBY** drones use a dimmed video style.
+- **Screen 3 — Live feed** — Per-drone **MP4** (`src/assets/videos/hawk-0x.mp4`); gradient backdrop per drone; **HUD** (CAM label, REC, time, signal bars); **crosshair** + corner brackets; **Ken Burns**-style motion on video; **HAWK-02** gets a **decorative tracking box** when **AI Detect** is off; optional **AI Detect: ON** runs **TensorFlow.js** + **COCO-SSD** (`lite_mobilenet_v2`) in the browser on the video (~2 fps), drawing labeled bounding boxes (COCO classes: person, car, bus, etc.); first use downloads model weights; post-optimize **MISSION AREA** frame when viewing the selected drone; **Web Audio** after **Audio ON** (user gesture); **STANDBY** drones use a dimmed video style.
 
 ---
 
 ## Applications & tools you need to run and test
 
-Install these on your machine (versions are indicative—use **Java 17+**, **Node 18+**, **Python 3.10+** for smoothest experience):
+Everything in this project can be run locally with **free tools**. Below is the recommended toolkit and how each item is used.
 
-| Tool | Why you need it |
-|------|-----------------|
-| **JDK 17** | Compile and run Spring Boot. |
-| **Apache Maven** | `mvn spring-boot:run` in `drone-backend/`. |
-| **Node.js + npm** | Install and run the Vite dev server for `drone-ui/`. |
-| **Python 3 + pip** | Run `quantum_optimizer.py`; install **`qiskit`** and **`qiskit-aer`**. |
-| **Modern browser** (Chrome, Edge, Firefox, Safari) | Exercise the UI; dev server on **port 5173**. |
-| **Git** (+ **Git LFS** if cloning) | Clone repo; **LFS** pulls large **`.mp4`** assets. |
-| **(Optional) Jupyter** | Open and run **`ieee_demo.ipynb`**. |
+### Development tools
+
+| Tool | Cost | Where to get it | Usage in this repo |
+|------|------|------------------|--------------------|
+| **Cursor IDE** | Free tier | cursor.com | Primary IDE used to build/edit the Java + React + Python code. Free tier provides ~2,000 AI completions/month (enough for this project). |
+| **Git** + **Git LFS** | Free | git-scm.com + git-lfs.com | Clone/push the repo; Git LFS downloads large **MP4** feed assets. |
+| **Postman** | Free | postman.com | Optional: test REST endpoints (`/api/auth/login`, `/api/drones`, `/api/drones/optimize`) without the UI. |
+
+### Runtime prerequisites
+
+| Tool | Cost | Where to get it | Usage in this repo |
+|------|------|------------------|--------------------|
+| **Java 17** | Free | adoptium.net | Runs the Spring Boot backend on port **8080**. |
+| **Maven** | Free | maven.apache.org | Builds/runs the backend: `mvn spring-boot:run` in `drone-backend/`. |
+| **Python 3.11** | Free | python.org | Runs `quantum_optimizer.py` and (optionally) Jupyter. |
+| **Node.js 20** | Free | nodejs.org | Runs the React UI via Vite (`npm install`, `npm run dev`) on port **5173**. |
+| **Jupyter Notebook** | Free | Installed via `pip` | Optional: run `ieee_demo.ipynb` in your browser (localhost). |
+| **Qiskit simulator (Qiskit Aer)** | Free / local | `pip install qiskit qiskit-aer` | Runs QAOA circuits locally on CPU — **no account, no internet needed after install**. |
+| **IBM Quantum Cloud** | Optional | quantum.ibm.com | Not required for this repo. Mentioned as the next step if you want to run circuits on real IBM hardware backends. |
+
+### Python packages (recommended)
+
+| Package | Install | Why |
+|---------|---------|-----|
+| **qiskit** | `pip install qiskit` | Circuit construction, operators, primitives. |
+| **qiskit-aer** | `pip install qiskit-aer` | Local simulator backend (`AerSimulator`). |
+| **notebook** | `pip install notebook` | (Optional) run Jupyter locally for `ieee_demo.ipynb`. |
+| **pennylane** | `pip install pennylane` | (Optional) alternative quantum programming ecosystem for future experiments (not required by current code). |
 
 **Quick test flow**
 

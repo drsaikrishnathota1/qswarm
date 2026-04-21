@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { ObjectDetectionOverlay } from "./ObjectDetectionOverlay.jsx";
 import videoHawk01 from "./assets/videos/hawk-01.mp4";
 import videoHawk02 from "./assets/videos/hawk-02.mp4";
 import videoHawk03 from "./assets/videos/hawk-03.mp4";
@@ -383,6 +384,7 @@ function LiveFeedScreen({ drone, onBack, lastOptimizedDroneName }) {
 
   // Audio: browsers require a user gesture; we provide a toggle button.
   const [audioOn, setAudioOn] = useState(false);
+  const [aiDetect, setAiDetect] = useState(false);
   const audioRef = React.useRef(null); // { stop }
   const videoRef = React.useRef(null);
 
@@ -391,6 +393,10 @@ function LiveFeedScreen({ drone, onBack, lastOptimizedDroneName }) {
       if (audioRef.current?.stop) audioRef.current.stop();
     };
   }, []);
+
+  useEffect(() => {
+    setAiDetect(false);
+  }, [drone?.id]);
 
   async function toggleAudio() {
     if (audioOn) {
@@ -578,6 +584,13 @@ function LiveFeedScreen({ drone, onBack, lastOptimizedDroneName }) {
             <button className="btnSecondary" onClick={toggleAudio} title="Enable simulated feed audio">
               {audioOn ? "Audio: ON" : "Audio: OFF"}
             </button>
+            <button
+              className="btnSecondary"
+              onClick={() => setAiDetect((v) => !v)}
+              title="Runs COCO-SSD (TensorFlow.js) on the video in your browser. First use downloads the model."
+            >
+              {aiDetect ? "AI Detect: ON" : "AI Detect: OFF"}
+            </button>
             <button className="btnSecondary" onClick={onBack}>
               Back
             </button>
@@ -607,10 +620,16 @@ function LiveFeedScreen({ drone, onBack, lastOptimizedDroneName }) {
           />
         </div>
 
+        {aiDetect ? (
+          <div className="feedDetectLayer">
+            <ObjectDetectionOverlay videoRef={videoRef} enabled={aiDetect} />
+          </div>
+        ) : null}
+
         <div className="crosshairH" />
         <div className="crosshairV" />
 
-        {drone?.name === "HAWK-02" ? <div className="trackBox" /> : null}
+        {drone?.name === "HAWK-02" && !aiDetect ? <div className="trackBox" /> : null}
 
         <div className="feedHudTop">
           <div className="feedHudLeft">
