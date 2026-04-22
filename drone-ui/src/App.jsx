@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { ObjectDetectionOverlay } from "./ObjectDetectionOverlay.jsx";
 import videoHawk01 from "./assets/videos/hawk-01.mp4";
 import videoHawk02 from "./assets/videos/hawk-02.mp4";
 import videoHawk03 from "./assets/videos/hawk-03.mp4";
@@ -78,6 +79,8 @@ function ErrorBanner({ error }) {
         background: "rgba(255, 90, 90, 0.08)",
         color: "#ffd3d3",
         fontWeight: 700,
+        width: "100%",
+        boxSizing: "border-box",
       }}
     >
       {error}
@@ -109,45 +112,43 @@ function LoginScreen({ onLoggedIn }) {
   }
 
   return (
-    <div className="container">
-      <div className="title">AEROS Command — Drone Surveillance Portal</div>
-      <div className="subtle" style={{ marginBottom: 18, maxWidth: 760 }}>
-        Secure operator access. Demo credentials are used for the backend call
-        (operator1/password123).
-      </div>
+    <div className="screenRoot screenRootLogin">
+      <div className="container">
+        <div className="title">AEROS Command — Drone Surveillance Portal</div>
 
-      <div className="card" style={{ maxWidth: 560 }}>
-        <div style={{ fontWeight: 900, marginBottom: 10 }}>Military Sign-In</div>
+        <div className="card cardAuth">
+          <div style={{ fontWeight: 900, marginBottom: 10 }}>Military Sign-In</div>
 
-        <div className="subtle" style={{ marginBottom: 12 }}>
-          Operator ID
-        </div>
-        <input
-          className="input"
-          value={operatorId}
-          onChange={(e) => setOperatorId(e.target.value)}
-          placeholder="Operator ID"
-          autoComplete="username"
-        />
+          <div className="subtle" style={{ marginBottom: 12 }}>
+            Operator ID
+          </div>
+          <input
+            className="input"
+            value={operatorId}
+            onChange={(e) => setOperatorId(e.target.value)}
+            placeholder="Operator ID"
+            autoComplete="username"
+          />
 
-        <div className="subtle" style={{ marginTop: 12, marginBottom: 12 }}>
-          Passphrase
-        </div>
-        <input
-          className="input"
-          type="password"
-          value={passphrase}
-          onChange={(e) => setPassphrase(e.target.value)}
-          placeholder="Passphrase"
-          autoComplete="current-password"
-        />
+          <div className="subtle" style={{ marginTop: 12, marginBottom: 12 }}>
+            Passphrase
+          </div>
+          <input
+            className="input"
+            type="password"
+            value={passphrase}
+            onChange={(e) => setPassphrase(e.target.value)}
+            placeholder="Passphrase"
+            autoComplete="current-password"
+          />
 
-        <ErrorBanner error={error} />
+          <ErrorBanner error={error} />
 
-        <div style={{ marginTop: 14, display: "flex", justifyContent: "flex-end" }}>
-          <button className="btn" onClick={login} disabled={loading} title="Login to proceed">
-            {loading ? "Signing in..." : "Login"}
-          </button>
+          <div style={{ marginTop: 14, display: "flex", justifyContent: "flex-end" }}>
+            <button className="btn" onClick={login} disabled={loading} title="Login to proceed">
+              {loading ? "Signing in..." : "Login"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -246,18 +247,18 @@ function DroneSelectionScreen({ token, onViewFeed, onOptimized }) {
   }
 
   return (
-    <div>
+    <div className="screenRoot">
       <div className="container">
-        <div className="row spaceBetween" style={{ marginBottom: 10 }}>
-          <div>
-            <div className="title">Drone Selection</div>
-            <div className="subtle">
-              Select a drone, then assign a mission target for quantum optimization.
-            </div>
+        <div style={{ marginBottom: 18, width: "100%" }}>
+          <div className="title">Drone Selection</div>
+          <div className="subtle" style={{ marginTop: 8 }}>
+            Select a drone, then assign a mission target for quantum optimization.
           </div>
-          <button className="btnSecondary" onClick={loadDrones} disabled={loading}>
-            {loading ? "Refreshing..." : "Refresh"}
-          </button>
+          <div style={{ marginTop: 14, display: "flex", justifyContent: "center" }}>
+            <button className="btnSecondary" onClick={loadDrones} disabled={loading}>
+              {loading ? "Refreshing..." : "Refresh"}
+            </button>
+          </div>
         </div>
 
         <ErrorBanner error={error} />
@@ -276,8 +277,8 @@ function DroneSelectionScreen({ token, onViewFeed, onOptimized }) {
       </div>
 
       <div className="footerBar">
-        <div className="container">
-          <div className="row spaceBetween">
+        <div className="container footerBarInner">
+          <div className="row footerBarRow">
             <div className="subtle">
               {selected ? (
                 <div>
@@ -383,6 +384,7 @@ function LiveFeedScreen({ drone, onBack, lastOptimizedDroneName }) {
 
   // Audio: browsers require a user gesture; we provide a toggle button.
   const [audioOn, setAudioOn] = useState(false);
+  const [aiDetect, setAiDetect] = useState(false);
   const audioRef = React.useRef(null); // { stop }
   const videoRef = React.useRef(null);
 
@@ -391,6 +393,10 @@ function LiveFeedScreen({ drone, onBack, lastOptimizedDroneName }) {
       if (audioRef.current?.stop) audioRef.current.stop();
     };
   }, []);
+
+  useEffect(() => {
+    setAiDetect(false);
+  }, [drone?.id]);
 
   async function toggleAudio() {
     if (audioOn) {
@@ -567,23 +573,29 @@ function LiveFeedScreen({ drone, onBack, lastOptimizedDroneName }) {
   const isStandby = String(drone?.status || "").toLowerCase() === "standby";
 
   return (
-    <div className="container">
-      <div className="row spaceBetween">
-        <div>
+    <div className="screenRoot">
+      <div className="container">
+        <div style={{ marginBottom: 14, width: "100%" }}>
           <div className="title">Live Feed</div>
-          <div className="subtle">
+          <div className="subtle" style={{ marginTop: 8 }}>
             {drone?.name || "Unknown Drone"} {" • "} {scene.label}
           </div>
+          <div className="row" style={{ marginTop: 14, justifyContent: "center", flexWrap: "wrap" }}>
+            <button className="btnSecondary" onClick={toggleAudio} title="Enable simulated feed audio">
+              {audioOn ? "Audio: ON" : "Audio: OFF"}
+            </button>
+            <button
+              className="btnSecondary"
+              onClick={() => setAiDetect((v) => !v)}
+              title="Runs COCO-SSD (TensorFlow.js) on the video in your browser. First use downloads the model."
+            >
+              {aiDetect ? "AI Detect: ON" : "AI Detect: OFF"}
+            </button>
+            <button className="btnSecondary" onClick={onBack}>
+              Back
+            </button>
+          </div>
         </div>
-        <div className="row">
-          <button className="btnSecondary" onClick={toggleAudio} title="Enable simulated feed audio">
-            {audioOn ? "Audio: ON" : "Audio: OFF"}
-          </button>
-          <button className="btnSecondary" onClick={onBack}>
-            Back
-          </button>
-        </div>
-      </div>
 
       <div
         className="feedBox"
@@ -608,10 +620,16 @@ function LiveFeedScreen({ drone, onBack, lastOptimizedDroneName }) {
           />
         </div>
 
+        {aiDetect ? (
+          <div className="feedDetectLayer">
+            <ObjectDetectionOverlay videoRef={videoRef} enabled={aiDetect} />
+          </div>
+        ) : null}
+
         <div className="crosshairH" />
         <div className="crosshairV" />
 
-        {drone?.name === "HAWK-02" ? <div className="trackBox" /> : null}
+        {drone?.name === "HAWK-02" && !aiDetect ? <div className="trackBox" /> : null}
 
         <div className="feedHudTop">
           <div className="feedHudLeft">
@@ -660,6 +678,7 @@ function LiveFeedScreen({ drone, onBack, lastOptimizedDroneName }) {
           <div className="telemetryLabel">Speed (km/h)</div>
           <div className="telemetryValue">{clamp(speed, 0, 120).toFixed(1)}</div>
         </div>
+      </div>
       </div>
     </div>
   );
