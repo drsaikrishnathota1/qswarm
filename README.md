@@ -315,6 +315,10 @@ npm run dev
 
 Open **`http://localhost:5173`** (or **`http://127.0.0.1:5173`**).
 
+### Mobile (Capacitor) / Google Play
+
+The UI can be built as an Android app under **`drone-ui/android/`** (Capacitor). Full steps (API hosting, signing, Play Console): **`docs/google-play-deploy.md`**.
+
 ### Optimizer only (terminal)
 
 ```bash

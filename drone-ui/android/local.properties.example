@@ -1,0 +1,3 @@
+# Copy to local.properties (not committed) after installing Android Studio / SDK.
+# Example macOS default path:
+sdk.dir=/Users/YOUR_USER/Library/Android/sdk

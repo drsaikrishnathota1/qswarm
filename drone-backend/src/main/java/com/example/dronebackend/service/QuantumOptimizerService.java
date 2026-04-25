@@ -25,16 +25,12 @@ public class QuantumOptimizerService {
 
     public OptimizationResult runOptimizer(double targetLat, double targetLon) throws IOException, InterruptedException {
         File workingDir = new File(System.getProperty("user.dir"));
+        File script = resolveOptimizerScript(workingDir)
+                .orElseThrow(() -> new IOException(
+                        "Python optimizer script not found. Set QSWARM_OPTIMIZER_SCRIPT or place quantum_optimizer.py "
+                                + "next to the JAR or in the repo root (../quantum_optimizer.py from drone-backend)."));
 
-        // Expected layout:
-        //   <repo>/quantum_optimizer.py
-        //   <repo>/drone-backend/   (this app)
-        //
-        // When running `mvn spring-boot:run` in drone-backend, user.dir is <repo>/drone-backend.
-        File script = new File(workingDir, "../quantum_optimizer.py").getCanonicalFile();
-        if (!script.exists()) {
-            throw new IOException("Python optimizer script not found at: " + script);
-        }
+        File processDir = script.getParentFile() != null ? script.getParentFile() : workingDir;
 
         List<String> cmd = new ArrayList<>();
         cmd.add(pythonExecutable());
@@ -49,7 +45,7 @@ public class QuantumOptimizerService {
         cmd.add("2048");
 
         ProcessBuilder pb = new ProcessBuilder(cmd);
-        pb.directory(workingDir);
+        pb.directory(processDir);
         pb.redirectErrorStream(true);
 
         Process proc = pb.start();
@@ -94,6 +90,31 @@ public class QuantumOptimizerService {
         // Prefer python3 if available; fall back to python (common on Windows/venv setups).
         // This is intentionally simple; users can control it via PATH.
         return "python3";
+    }
+
+    /**
+     * Resolves {@code quantum_optimizer.py} for local dev, Docker (/app), or custom paths via {@code QSWARM_OPTIMIZER_SCRIPT}.
+     */
+    private static Optional<File> resolveOptimizerScript(File workingDir) throws IOException {
+        String env = System.getenv("QSWARM_OPTIMIZER_SCRIPT");
+        if (env != null && !env.isBlank()) {
+            File f = new File(env.trim());
+            if (f.isFile()) {
+                return Optional.of(f.getCanonicalFile());
+            }
+        }
+
+        File sameDir = new File(workingDir, "quantum_optimizer.py").getCanonicalFile();
+        if (sameDir.isFile()) {
+            return Optional.of(sameDir);
+        }
+
+        File repoRoot = new File(workingDir, "../quantum_optimizer.py").getCanonicalFile();
+        if (repoRoot.isFile()) {
+            return Optional.of(repoRoot);
+        }
+
+        return Optional.empty();
     }
 }
 

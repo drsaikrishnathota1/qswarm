@@ -13,3 +13,14 @@ __pycache__/
 **/node_modules/
 **/dist/
 
+# Android / Capacitor (generated build outputs; keep source under version control)
+drone-ui/android/app/build/
+drone-ui/android/build/
+drone-ui/android/.gradle/
+drone-ui/android/local.properties
+drone-ui/android/*.iml
+drone-ui/android/.idea/
+
+# Capacitor copies the Vite build (including large MP4s) here — regenerate with `npm run build:android`, do not commit.
+drone-ui/android/app/src/main/assets/
+

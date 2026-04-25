@@ -6,7 +6,8 @@ import videoHawk03 from "./assets/videos/hawk-03.mp4";
 import videoHawk04 from "./assets/videos/hawk-04.mp4";
 import videoHawk05 from "./assets/videos/hawk-05.mp4";
 
-const API_BASE = "http://localhost:8080";
+/** Base URL for the Spring API (no trailing slash). Override for mobile/cloud: see drone-ui/.env.example */
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8080").replace(/\/$/, "");
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
