@@ -1,5 +1,11 @@
 apply plugin: 'com.android.application'
 
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+}
+
 android {
     namespace "com.qswarm.aeroscommand"
     compileSdk rootProject.ext.compileSdkVersion
@@ -16,10 +22,30 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+
+    signingConfigs {
+        release {
+            if (!keystorePropertiesFile.exists()) {
+                throw new GradleException("Missing signing config: ${keystorePropertiesFile}. See keystore.properties.example in android/.")
+            }
+
+            def storeFilePath = keystoreProperties.getProperty("storeFile")
+            if (!storeFilePath) {
+                throw new GradleException("keystore.properties must define storeFile (path to your .jks/.keystore).")
+            }
+
+            storeFile file(storeFilePath)
+            storePassword keystoreProperties.getProperty("storePassword")
+            keyAlias keystoreProperties.getProperty("keyAlias")
+            keyPassword keystoreProperties.getProperty("keyPassword")
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
 }
