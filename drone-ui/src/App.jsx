@@ -179,11 +179,10 @@ function DroneSelectionScreen({ token, onToken, onViewFeed, onOptimized }) {
       setDrones(data);
       if (!selectedId && data.length) setSelectedId(data[0].id);
     } catch (e) {
-      const msg = e?.message || String(e);
       const demos = DEMO_DRONES;
       setDrones(demos);
       setSelectedId((prev) => prev || demos[0]?.id || null);
-      setError(`Backend unavailable (${msg}). Showing simulated drones.`);
+      setError("Backend unavailable. Showing simulated drones.");
     } finally {
       setLoading(false);
     }
@@ -218,7 +217,7 @@ function DroneSelectionScreen({ token, onToken, onViewFeed, onOptimized }) {
       };
       setModal(simulated);
       if (simulated?.selectedDroneName) onOptimized?.(simulated.selectedDroneName);
-      setError(`Backend unavailable (${msg}). Showing simulated optimization.`);
+      setError("Backend unavailable. Showing simulated optimization.");
     } finally {
       setOptimizing(false);
     }
