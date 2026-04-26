@@ -2,6 +2,9 @@
   "appId": "com.qswarm.aeroscommand",
   "appName": "AEROS Command",
   "webDir": "dist",
+  "android": {
+    "allowMixedContent": true
+  },
   "server": {
     "androidScheme": "https"
   }

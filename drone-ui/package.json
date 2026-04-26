@@ -9,7 +9,8 @@
     "preview": "vite preview --port 5173 --strictPort",
     "cap:sync": "cap sync android",
     "android:open": "cap open android",
-    "build:android": "vite build && cap sync android"
+    "build:android": "vite build && cap sync android",
+    "bundle:android": "vite build && cap sync android && cd android && ./gradlew bundleRelease"
   },
   "dependencies": {
     "@capacitor/android": "^6.2.0",

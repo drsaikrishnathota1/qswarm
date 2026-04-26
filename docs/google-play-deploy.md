@@ -90,6 +90,6 @@ In Android Studio:
 
 ## Notes
 
-- **App size:** This demo bundles large **MP4** feeds into the web build (and therefore into the **AAB**). If Play Console rejects the upload or users see huge downloads, plan for **Play Asset Delivery**, **on-demand video URLs**, or smaller assets—see Android Studio’s **Analyze APK / App Bundle** after `bundleRelease`.
+- **App size / 200 MB base module:** Production `vite build` removes `dist/feeds/*.mp4` so the **AAB** stays under Play’s **200 MB** compressed base-module limit; the store build uses gradient-only feeds unless you opt in (see `drone-ui/.env.example`). For richer demos, use **Play Asset Delivery**, **HTTPS video URLs**, or smaller encodes—see Android Studio’s **Analyze App Bundle** after `bundleRelease`.
 - **TensorFlow.js** and **video assets** run on-device; first launch may download model weights (network permission is already typical for an API-backed app).
 - **Cleartext HTTP** is allowed only in **debug** builds via `src/debug/AndroidManifest.xml` for emulator convenience; **release** builds should use **HTTPS** for `VITE_API_BASE_URL`.

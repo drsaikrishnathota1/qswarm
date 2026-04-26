@@ -1,16 +1,50 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { ObjectDetectionOverlay } from "./ObjectDetectionOverlay.jsx";
 import { WeatherWidget } from "./WeatherWidget.jsx";
-import videoHawk01 from "./assets/videos/hawk-01.mp4";
-import videoHawk02 from "./assets/videos/hawk-02.mp4";
-import videoHawk03 from "./assets/videos/hawk-03.mp4";
-import videoHawk04 from "./assets/videos/hawk-04.mp4";
-import videoHawk05 from "./assets/videos/hawk-05.mp4";
+
+/**
+ * Demo loop videos live under `public/feeds/` (not imported, so they are not hashed into dist/assets).
+ * Production `vite build` removes `dist/feeds/*.mp4` so the Play base module stays under 200 MB.
+ * Dev server serves /feeds/*.mp4 by default. Set VITE_INCLUDE_FEED_MP4=false to disable.
+ */
+function publicFeedUrl(file) {
+  const include =
+    import.meta.env.PROD
+      ? import.meta.env.VITE_INCLUDE_FEED_MP4 === "true"
+      : import.meta.env.VITE_INCLUDE_FEED_MP4 !== "false";
+  if (!include) return "";
+  const base = import.meta.env.BASE_URL || "/";
+  const root = base.endsWith("/") ? base : `${base}/`;
+  return `${root}feeds/${file}`;
+}
 
 /** Base URL for the Spring API (no trailing slash). Override for mobile/cloud: see drone-ui/.env.example */
 // In dev, prefer same-origin (/api) so Vite can proxy to the backend and avoid CORS issues.
 // For mobile/cloud, set VITE_API_BASE_URL to an absolute URL.
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
+// On Android (Capacitor, https://localhost), localhost/127.0.0.1 points at the device — use the
+// emulator alias for the host machine. capacitor.config.json sets allowMixedContent for http:// API.
+function resolveApiBaseUrl() {
+  const raw = String(import.meta.env.VITE_API_BASE_URL || "").trim().replace(/\/$/, "");
+  if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== "android") {
+    return raw;
+  }
+  if (!raw) {
+    return "http://10.0.2.2:8080";
+  }
+  try {
+    const u = new URL(raw);
+    if (u.hostname === "localhost" || u.hostname === "127.0.0.1") {
+      const port = u.port || "8080";
+      return `http://10.0.2.2:${port}`;
+    }
+  } catch {
+    /* ignore invalid URL */
+  }
+  return raw;
+}
+
+const API_BASE = resolveApiBaseUrl();
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
@@ -182,7 +216,8 @@ function DroneSelectionScreen({ token, onToken, onViewFeed, onOptimized }) {
       const demos = DEMO_DRONES;
       setDrones(demos);
       setSelectedId((prev) => prev || demos[0]?.id || null);
-      setError("Backend unavailable. Showing simulated drones.");
+      const hint = e?.message ? ` ${String(e.message).slice(0, 220)}` : "";
+      setError(`Backend unavailable. Showing simulated drones.${hint}`);
     } finally {
       setLoading(false);
     }
@@ -217,7 +252,8 @@ function DroneSelectionScreen({ token, onToken, onViewFeed, onOptimized }) {
       };
       setModal(simulated);
       if (simulated?.selectedDroneName) onOptimized?.(simulated.selectedDroneName);
-      setError("Backend unavailable. Showing simulated optimization.");
+      const hint = msg ? ` ${String(msg).slice(0, 220)}` : "";
+      setError(`Backend unavailable. Showing simulated optimization.${hint}`);
     } finally {
       setOptimizing(false);
     }
@@ -325,32 +361,32 @@ function LiveFeedScreen({ drone, onBack, lastOptimizedDroneName }) {
         label: "Swarm Surveillance — Desert grid",
         feedBackdrop:
           "linear-gradient(165deg, #0f1419 0%, #1a2433 35%, #2a1f14 70%, #0a0806 100%)",
-        video: videoHawk01
+        videoUrl: publicFeedUrl("hawk-01.mp4"),
       },
       "HAWK-02": {
         label: "Roadwatch — Coastal Track",
         feedBackdrop:
           "linear-gradient(180deg, #061a24 0%, #0c3044 45%, #082030 70%, #040c12 100%)",
-        video: videoHawk02
+        videoUrl: publicFeedUrl("hawk-02.mp4"),
       },
       "HAWK-03": {
         label: "Quantum Tasking — Skyline mission",
         feedBackdrop:
           "linear-gradient(155deg, #120a1c 0%, #251838 40%, #1a1030 100%)",
-        video: videoHawk03
+        videoUrl: publicFeedUrl("hawk-03.mp4"),
       },
       "HAWK-04": {
         label: "Base Perimeter — Strike Ready",
         feedBackdrop:
           "linear-gradient(170deg, #141010 0%, #2a1818 50%, #1a0a0a 100%)",
-        video: videoHawk04
+        videoUrl: publicFeedUrl("hawk-04.mp4"),
       },
       "HAWK-05": {
         label: "Patrol Sweep — Long Pan",
         feedBackdrop:
           "linear-gradient(160deg, #081208 0%, #122418 55%, #0a140c 100%)",
-        video: videoHawk05
-      }
+        videoUrl: publicFeedUrl("hawk-05.mp4"),
+      },
     };
     return presets[name] || presets["HAWK-03"];
   }, [drone?.name]);
@@ -599,18 +635,18 @@ function LiveFeedScreen({ drone, onBack, lastOptimizedDroneName }) {
           <video
             ref={videoRef}
             className={`feedVideo ${isStandby ? "feedVideoDim" : ""}`}
-            src={scene.video}
+            src={scene.videoUrl || undefined}
             autoPlay
             loop
             playsInline
             muted={!audioOn}
-            preload="auto"
+            preload={scene.videoUrl ? "auto" : "metadata"}
           />
         </div>
 
         {aiDetect ? (
           <div className="feedDetectLayer">
-            <ObjectDetectionOverlay videoRef={videoRef} enabled={aiDetect} />
+            <ObjectDetectionOverlay videoRef={videoRef} enabled={aiDetect && !!scene.videoUrl} />
           </div>
         ) : null}
 

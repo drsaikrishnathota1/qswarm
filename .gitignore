@@ -28,3 +28,6 @@ drone-ui/android/.idea/
 # Capacitor copies the Vite build (including large MP4s) here — regenerate with `npm run build:android`, do not commit.
 drone-ui/android/app/src/main/assets/
 
+# Large demo feed loops (local dev only; stripped from production dist — see vite.config.js)
+drone-ui/public/feeds/*.mp4
+
