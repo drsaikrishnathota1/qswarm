@@ -2,8 +2,14 @@ apply plugin: 'com.android.application'
 
 def keystorePropertiesFile = rootProject.file("keystore.properties")
 def keystoreProperties = new Properties()
+def hasReleaseKeystore = false
 if (keystorePropertiesFile.exists()) {
     keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+    hasReleaseKeystore =
+        keystoreProperties.getProperty("storeFile") &&
+        keystoreProperties.getProperty("storePassword") &&
+        keystoreProperties.getProperty("keyAlias") &&
+        keystoreProperties.getProperty("keyPassword")
 }
 
 android {
@@ -25,19 +31,17 @@ android {
 
     signingConfigs {
         release {
-            if (!keystorePropertiesFile.exists()) {
-                throw new GradleException("Missing signing config: ${keystorePropertiesFile}. See keystore.properties.example in android/.")
+            if (hasReleaseKeystore) {
+                def storeFilePath = keystoreProperties.getProperty("storeFile")
+                storeFile file(storeFilePath)
+                storePassword keystoreProperties.getProperty("storePassword")
+                keyAlias keystoreProperties.getProperty("keyAlias")
+                keyPassword keystoreProperties.getProperty("keyPassword")
+            } else {
+                // Local builds without a release keystore: keep Gradle happy and avoid referencing missing configs.
+                // This is NOT suitable for Play Store uploads.
+                initWith signingConfigs.debug
             }
-
-            def storeFilePath = keystoreProperties.getProperty("storeFile")
-            if (!storeFilePath) {
-                throw new GradleException("keystore.properties must define storeFile (path to your .jks/.keystore).")
-            }
-
-            storeFile file(storeFilePath)
-            storePassword keystoreProperties.getProperty("storePassword")
-            keyAlias keystoreProperties.getProperty("keyAlias")
-            keyPassword keystoreProperties.getProperty("keyPassword")
         }
     }
 
@@ -48,6 +52,15 @@ android {
             signingConfig signingConfigs.release
         }
     }
+}
+
+if (!hasReleaseKeystore) {
+    logger.lifecycle(
+        "\nNOTE: Release signing is not configured (missing or incomplete android/keystore.properties).\n" +
+        "- assembleDebug will still work.\n" +
+        "- bundleRelease will build, but will NOT be Play-signed until you add keystore.properties + a keystore.\n" +
+        "See: android/keystore.properties.example\n"
+    )
 }
 
 repositories {
