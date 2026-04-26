@@ -4,7 +4,7 @@
 # Run:
 #   docker run --rm -p 8080:8080 qswarm-api
 
-FROM eclipse-temurin:17-jdk-jammy AS build
+FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /build
 COPY drone-backend/pom.xml drone-backend/
 COPY drone-backend/src drone-backend/src

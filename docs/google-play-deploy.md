@@ -10,6 +10,21 @@ This repo is a **web stack** (React + Spring Boot). Google Play needs an **Andro
 
 ## 1) Deploy the API
 
+### Option A — One script (Cloud Run, no local Docker)
+
+From the **repository root**, with **`gcloud`** installed and a project you control (**billing on**):
+
+```bash
+export PATH="/opt/homebrew/bin:$PATH"   # Homebrew gcloud on Apple Silicon
+gcloud auth login
+gcloud config set project YOUR_PROJECT_ID
+./scripts/deploy-cloud-run.sh
+```
+
+The script enables APIs, creates an Artifact Registry repo if needed, runs **`gcloud builds submit`** (builds your root **`Dockerfile` in Google’s cloud**), deploys **Cloud Run**, and prints the **`https://…`** URL. Override defaults with env vars: `GCP_PROJECT_ID`, `GCP_REGION`, `ARTIFACT_REGISTRY_REPO`, `CLOUD_RUN_SERVICE`, `CLOUD_RUN_MEMORY`.
+
+### Option B — Docker on your machine
+
 Build the container from the **repository root**:
 
 ```bash

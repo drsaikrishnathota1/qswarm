@@ -9,6 +9,10 @@ __pycache__/
 **/target/
 *.class
 
+# Local Cloud Run deploy caches (do not commit)
+.gcloud/
+.m2/
+
 # Node / Vite
 **/node_modules/
 **/dist/

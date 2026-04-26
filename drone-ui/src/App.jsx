@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ObjectDetectionOverlay } from "./ObjectDetectionOverlay.jsx";
+import { WeatherWidget } from "./WeatherWidget.jsx";
 import videoHawk01 from "./assets/videos/hawk-01.mp4";
 import videoHawk02 from "./assets/videos/hawk-02.mp4";
 import videoHawk03 from "./assets/videos/hawk-03.mp4";
@@ -7,7 +8,9 @@ import videoHawk04 from "./assets/videos/hawk-04.mp4";
 import videoHawk05 from "./assets/videos/hawk-05.mp4";
 
 /** Base URL for the Spring API (no trailing slash). Override for mobile/cloud: see drone-ui/.env.example */
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8080").replace(/\/$/, "");
+// In dev, prefer same-origin (/api) so Vite can proxy to the backend and avoid CORS issues.
+// For mobile/cloud, set VITE_API_BASE_URL to an absolute URL.
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
@@ -51,7 +54,8 @@ async function apiFetch(path, { token, method = "GET", body } = {}) {
   const headers = { "Content-Type": "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const res = await fetch(`${API_BASE}${path}`, {
+  const url = API_BASE ? `${API_BASE}${path}` : path;
+  const res = await fetch(url, {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
@@ -199,7 +203,7 @@ function DroneCard({ drone, selected, onSelect, onViewFeed }) {
   );
 }
 
-function DroneSelectionScreen({ token, onViewFeed, onOptimized }) {
+function DroneSelectionScreen({ token, onToken, onViewFeed, onOptimized }) {
   const [drones, setDrones] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -208,15 +212,47 @@ function DroneSelectionScreen({ token, onViewFeed, onOptimized }) {
   const [optimizing, setOptimizing] = useState(false);
   const [modal, setModal] = useState(null);
 
+  function demoDrones() {
+    return [
+      { id: "demo-1", name: "HAWK-01", status: "active", batteryPercentage: 87, latitude: 32.8672, longitude: -96.6539, altitude: 114.3 },
+      { id: "demo-2", name: "HAWK-02", status: "active", batteryPercentage: 64, latitude: 32.8724, longitude: -96.6421, altitude: 96.8 },
+      { id: "demo-3", name: "HAWK-03", status: "standby", batteryPercentage: 92, latitude: 32.8621, longitude: -96.6628, altitude: 132.5 },
+      { id: "demo-4", name: "HAWK-04", status: "active", batteryPercentage: 51, latitude: 32.8768, longitude: -96.6554, altitude: 88.9 },
+      { id: "demo-5", name: "HAWK-05", status: "standby", batteryPercentage: 73, latitude: 32.8699, longitude: -96.6477, altitude: 121.1 },
+    ];
+  }
+
+  async function ensureToken() {
+    if (token) return token;
+    const data = await apiFetch("/api/auth/login", {
+      method: "POST",
+      body: { username: "operator1", password: "password123" },
+    });
+    const t = data?.token || "";
+    if (t) onToken?.(t);
+    return t;
+  }
+
   async function loadDrones() {
     setError("");
     setLoading(true);
     try {
-      const data = await apiFetch("/api/drones", { token });
-      setDrones(Array.isArray(data) ? data : []);
-      if (!selectedId && Array.isArray(data) && data.length) setSelectedId(data[0].id);
+      const t = await ensureToken();
+      const data = await apiFetch("/api/drones", { token: t });
+      if (!Array.isArray(data)) {
+        throw new Error(`Unexpected /api/drones response (expected JSON array). Got: ${typeof data}`);
+      }
+      if (!data.length) {
+        throw new Error("Empty drone list from backend.");
+      }
+      setDrones(data);
+      if (!selectedId && data.length) setSelectedId(data[0].id);
     } catch (e) {
-      setError(e?.message || String(e));
+      const msg = e?.message || String(e);
+      const demos = demoDrones();
+      setDrones(demos);
+      setSelectedId((prev) => prev || demos[0]?.id || null);
+      setError(`Backend unavailable (${msg}). Showing simulated drones.`);
     } finally {
       setLoading(false);
     }
@@ -233,15 +269,25 @@ function DroneSelectionScreen({ token, onViewFeed, onOptimized }) {
     setOptimizing(true);
     setError("");
     try {
+      const t = await ensureToken();
       const data = await apiFetch("/api/drones/optimize", {
-        token,
+        token: t,
         method: "POST",
         body: { targetLat: 32.87, targetLon: -96.65 },
       });
       setModal(data);
       if (data?.selectedDroneName) onOptimized?.(data.selectedDroneName);
     } catch (e) {
-      setError(e?.message || String(e));
+      const msg = e?.message || String(e);
+      const selected = drones.find((d) => d.id === selectedId) || drones[0] || null;
+      const simulated = {
+        selectedDroneName: selected?.name || "HAWK-03",
+        selectionReason: "Simulated result (backend unavailable).",
+        rawOutput: `Backend unavailable: ${msg}\n\nSimulated optimizer output:\n- objective: minimize distance + maximize battery\n- chosen: ${selected?.name || "HAWK-03"}\n- target: (32.8700, -96.6500)`,
+      };
+      setModal(simulated);
+      if (simulated?.selectedDroneName) onOptimized?.(simulated.selectedDroneName);
+      setError(`Backend unavailable (${msg}). Showing simulated optimization.`);
     } finally {
       setOptimizing(false);
     }
@@ -386,6 +432,7 @@ function LiveFeedScreen({ drone, onBack, lastOptimizedDroneName }) {
   // Audio: browsers require a user gesture; we provide a toggle button.
   const [audioOn, setAudioOn] = useState(false);
   const [aiDetect, setAiDetect] = useState(false);
+  const [showWeather, setShowWeather] = useState(false);
   const audioRef = React.useRef(null); // { stop }
   const videoRef = React.useRef(null);
 
@@ -397,6 +444,7 @@ function LiveFeedScreen({ drone, onBack, lastOptimizedDroneName }) {
 
   useEffect(() => {
     setAiDetect(false);
+    setShowWeather(false);
   }, [drone?.id]);
 
   async function toggleAudio() {
@@ -592,6 +640,13 @@ function LiveFeedScreen({ drone, onBack, lastOptimizedDroneName }) {
             >
               {aiDetect ? "AI Detect: ON" : "AI Detect: OFF"}
             </button>
+            <button
+              className="btnSecondary"
+              onClick={() => setShowWeather((v) => !v)}
+              title="Toggle weather overlay on the live feed"
+            >
+              {showWeather ? "Weather: ON" : "Weather: OFF"}
+            </button>
             <button className="btnSecondary" onClick={onBack}>
               Back
             </button>
@@ -654,6 +709,12 @@ function LiveFeedScreen({ drone, onBack, lastOptimizedDroneName }) {
           </div>
         </div>
 
+        {showWeather ? (
+          <div className="feedHudWeather" aria-label="Weather overlay">
+            <WeatherWidget latitude={lat} longitude={lon} />
+          </div>
+        ) : null}
+
         {isMissionDrone ? <div className="missionFrame">MISSION AREA</div> : null}
 
         <div className="feedCorner tl" />
@@ -686,21 +747,10 @@ function LiveFeedScreen({ drone, onBack, lastOptimizedDroneName }) {
 }
 
 export function App() {
-  const [screen, setScreen] = useState("login"); // login | drones | feed
-  const [token, setToken] = useState("");
+  const [screen, setScreen] = useState("drones"); // drones | feed
+  const [token, setToken] = useState(""); // auto-login in background when needed
   const [feedDrone, setFeedDrone] = useState(null);
   const [lastOptimizedDroneName, setLastOptimizedDroneName] = useState("");
-
-  if (screen === "login") {
-    return (
-      <LoginScreen
-        onLoggedIn={(t) => {
-          setToken(t);
-          setScreen("drones");
-        }}
-      />
-    );
-  }
 
   if (screen === "feed") {
     return (
@@ -715,6 +765,7 @@ export function App() {
   return (
     <DroneSelectionScreen
       token={token}
+      onToken={(t) => setToken(t)}
       onOptimized={(name) => setLastOptimizedDroneName(name)}
       onViewFeed={(drone) => {
         setFeedDrone(drone);
