@@ -228,14 +228,16 @@ function DroneSelectionScreen({ token, onToken, onViewFeed, onOptimized }) {
     <div className="screenRoot">
       <div className="container">
         <div style={{ marginBottom: 18, width: "100%" }}>
-          <div className="title">Drone Selection</div>
+          <div className="titleRow">
+            <div className="title" style={{ margin: 0 }}>Drone Selection</div>
+            <div className="titleRowActions">
+              <button className="btnSecondary" onClick={loadDrones} disabled={loading}>
+                {loading ? "Refreshing..." : "Refresh"}
+              </button>
+            </div>
+          </div>
           <div className="subtle" style={{ marginTop: 8 }}>
             Select a drone, then assign a mission target for quantum optimization.
-          </div>
-          <div style={{ marginTop: 14, display: "flex", justifyContent: "center" }}>
-            <button className="btnSecondary" onClick={loadDrones} disabled={loading}>
-              {loading ? "Refreshing..." : "Refresh"}
-            </button>
           </div>
         </div>
 
@@ -682,6 +684,14 @@ export function App() {
   const [token, setToken] = useState(""); // auto-login in background when needed
   const [feedDrone, setFeedDrone] = useState(null);
   const [lastOptimizedDroneName, setLastOptimizedDroneName] = useState("");
+  useEffect(() => {
+    // Lock UI to dark theme (no theme toggle on home screen).
+    try {
+      document.documentElement.dataset.theme = "dark";
+    } catch {
+      // ignore
+    }
+  }, []);
 
   if (screen === "feed") {
     return (

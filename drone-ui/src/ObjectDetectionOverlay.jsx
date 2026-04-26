@@ -110,19 +110,25 @@ export function ObjectDetectionOverlay({ videoRef, enabled }) {
           if (cancelled) return;
           const ctx = canvas.getContext("2d");
           if (!ctx) return;
+          const rs = window.getComputedStyle(document.documentElement);
+          const accent = (rs.getPropertyValue("--accent-500") || "").trim() || "rgb(62, 148, 255)";
+          const hudBg = (rs.getPropertyValue("--bg") || "").trim() || "#0a1628";
+          const hudFill =
+            hudBg.startsWith("#") && hudBg.length === 7 ? `${hudBg}E6` : "rgba(6, 14, 28, 0.9)";
+          const text = (rs.getPropertyValue("--text") || "").trim() || "#e6edf7";
           ctx.clearRect(0, 0, cw, ch);
           ctx.lineWidth = 2;
           ctx.font = "600 11px ui-sans-serif, system-ui, sans-serif";
           for (const p of preds) {
             const [bx, by, bw, bh] = p.bbox;
             const r = mapBoxCover(bx, by, bw, bh, vw, vh, cw, ch);
-            ctx.strokeStyle = "rgba(62, 214, 255, 0.95)";
+            ctx.strokeStyle = accent;
             ctx.strokeRect(r.x, r.y, r.w, r.h);
             const label = `${p.class} ${Math.round(p.score * 100)}%`;
             const tw = Math.min(ctx.measureText(label).width + 10, cw - r.x);
-            ctx.fillStyle = "rgba(6, 14, 28, 0.9)";
+            ctx.fillStyle = hudFill;
             ctx.fillRect(r.x, Math.max(0, r.y - 20), tw, 20);
-            ctx.fillStyle = "#dff8ff";
+            ctx.fillStyle = text;
             ctx.fillText(label, r.x + 5, r.y - 6);
           }
         })
