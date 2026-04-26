@@ -16,6 +16,14 @@ function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
 
+const DEMO_DRONES = [
+  { id: "demo-1", name: "HAWK-01", status: "active", batteryPercentage: 87, latitude: 32.8672, longitude: -96.6539, altitude: 114.3 },
+  { id: "demo-2", name: "HAWK-02", status: "active", batteryPercentage: 64, latitude: 32.8724, longitude: -96.6421, altitude: 96.8 },
+  { id: "demo-3", name: "HAWK-03", status: "standby", batteryPercentage: 92, latitude: 32.8621, longitude: -96.6628, altitude: 132.5 },
+  { id: "demo-4", name: "HAWK-04", status: "active", batteryPercentage: 51, latitude: 32.8768, longitude: -96.6554, altitude: 88.9 },
+  { id: "demo-5", name: "HAWK-05", status: "standby", batteryPercentage: 73, latitude: 32.8699, longitude: -96.6477, altitude: 121.1 },
+];
+
 function StatusBadge({ status }) {
   const isActive = String(status || "").toLowerCase() === "active";
   const badgeClass = isActive ? "badge badgeActive" : "badge badgeStandby";
@@ -93,73 +101,6 @@ function ErrorBanner({ error }) {
   );
 }
 
-function LoginScreen({ onLoggedIn }) {
-  const [operatorId, setOperatorId] = useState("operator1");
-  const [passphrase, setPassphrase] = useState("password123");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  async function login() {
-    setError("");
-    setLoading(true);
-    try {
-      const data = await apiFetch("/api/auth/login", {
-        method: "POST",
-        body: { username: "operator1", password: "password123" },
-      });
-      if (!data?.token) throw new Error("Login succeeded but token missing.");
-      onLoggedIn(data.token);
-    } catch (e) {
-      setError(e?.message || String(e));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div className="screenRoot screenRootLogin">
-      <div className="container">
-        <div className="title">AEROS Command — Drone Surveillance Portal</div>
-
-        <div className="card cardAuth">
-          <div style={{ fontWeight: 900, marginBottom: 10 }}>Military Sign-In</div>
-
-          <div className="subtle" style={{ marginBottom: 12 }}>
-            Operator ID
-          </div>
-          <input
-            className="input"
-            value={operatorId}
-            onChange={(e) => setOperatorId(e.target.value)}
-            placeholder="Operator ID"
-            autoComplete="username"
-          />
-
-          <div className="subtle" style={{ marginTop: 12, marginBottom: 12 }}>
-            Passphrase
-          </div>
-          <input
-            className="input"
-            type="password"
-            value={passphrase}
-            onChange={(e) => setPassphrase(e.target.value)}
-            placeholder="Passphrase"
-            autoComplete="current-password"
-          />
-
-          <ErrorBanner error={error} />
-
-          <div style={{ marginTop: 14, display: "flex", justifyContent: "flex-end" }}>
-            <button className="btn" onClick={login} disabled={loading} title="Login to proceed">
-              {loading ? "Signing in..." : "Login"}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function DroneCard({ drone, selected, onSelect, onViewFeed }) {
   const coords = `${drone.latitude.toFixed(4)}, ${drone.longitude.toFixed(4)}`;
   return (
@@ -212,16 +153,6 @@ function DroneSelectionScreen({ token, onToken, onViewFeed, onOptimized }) {
   const [optimizing, setOptimizing] = useState(false);
   const [modal, setModal] = useState(null);
 
-  function demoDrones() {
-    return [
-      { id: "demo-1", name: "HAWK-01", status: "active", batteryPercentage: 87, latitude: 32.8672, longitude: -96.6539, altitude: 114.3 },
-      { id: "demo-2", name: "HAWK-02", status: "active", batteryPercentage: 64, latitude: 32.8724, longitude: -96.6421, altitude: 96.8 },
-      { id: "demo-3", name: "HAWK-03", status: "standby", batteryPercentage: 92, latitude: 32.8621, longitude: -96.6628, altitude: 132.5 },
-      { id: "demo-4", name: "HAWK-04", status: "active", batteryPercentage: 51, latitude: 32.8768, longitude: -96.6554, altitude: 88.9 },
-      { id: "demo-5", name: "HAWK-05", status: "standby", batteryPercentage: 73, latitude: 32.8699, longitude: -96.6477, altitude: 121.1 },
-    ];
-  }
-
   async function ensureToken() {
     if (token) return token;
     const data = await apiFetch("/api/auth/login", {
@@ -249,7 +180,7 @@ function DroneSelectionScreen({ token, onToken, onViewFeed, onOptimized }) {
       if (!selectedId && data.length) setSelectedId(data[0].id);
     } catch (e) {
       const msg = e?.message || String(e);
-      const demos = demoDrones();
+      const demos = DEMO_DRONES;
       setDrones(demos);
       setSelectedId((prev) => prev || demos[0]?.id || null);
       setError(`Backend unavailable (${msg}). Showing simulated drones.`);

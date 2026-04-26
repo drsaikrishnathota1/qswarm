@@ -35,10 +35,6 @@ body {
   box-sizing: border-box;
 }
 
-.screenRootLogin {
-  justify-content: center;
-}
-
 .container {
   max-width: 1120px;
   margin: 0 auto;
@@ -66,17 +62,6 @@ body {
 
 .row.spaceBetween {
   width: 100%;
-}
-
-.cardAuth {
-  max-width: 560px;
-  width: 100%;
-  margin-top: 8px;
-  text-align: left;
-}
-
-.cardAuth .row {
-  justify-content: flex-end;
 }
 
 .footerBarInner {
